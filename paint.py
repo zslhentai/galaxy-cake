@@ -18,7 +18,7 @@ filament=(.5+.5*striations)**5
 def palette(t,colors):
     return np.stack([np.interp(t,np.linspace(0,1,len(colors)),[c[i] for c in colors]) for i in range(3)],-1)
 arr=palette(np.clip(.15+.09*f+mist*(.27+.24*filament+.12*np.sin(5*phase)),0,1),
-            [(9,12,28),(20,23,50),(49,39,87),(59,67,124),(45,108,145),(74,156,165),(191,151,137)])
+            [(7,10,22),(15,19,39),(30,36,71),(47,50,100),(32,83,124),(48,109,140),(149,113,139)])
 arr+=((2.4*np.sin(82*ridge+5*f)+1.6*np.sin(109*f))*mist)[:,:,None]
 im=Image.fromarray(np.uint8(np.clip(arr,0,255))); d=ImageDraw.Draw(im)
 colors=['#fff4cb','#bbdfff','#edb45b','#426bbc','#f2d47b','#f9b4aa']
@@ -30,20 +30,22 @@ for i in range(640):
     col=rng.choice(['#1e4071','#36779b','#487bb1','#738baa','#3594a6','#be9f70','#343858'])
     length=rng.uniform(2,23); slope=H/W*2*math.pi*(.40*math.cos(2*a+.4)+.55*math.cos(5*a))
     d.polygon([(x,y),(x+length*.65,y+length*slope*.65-1.5),(x+length,y+length*slope),(x+length*.3,y+length*slope*.3+1)],fill=col)
-for i in range(2300):
+from atelier import illuminate, frost
+illuminate(im)
+for i in range(1250):
     x=rng.randrange(W); y=rng.randrange(H); r=rng.choices([.5,1,2,3],[.52,.41,.06,.01])[0]
     d.ellipse((x-r,y-r,x+r,y+r),fill=rng.choice(colors))
-for i in range(68):
+for i in range(36):
     x=rng.randrange(W); y=rng.randrange(H); r=rng.uniform(2,9); n=rng.choice([4,5])
     d.polygon([(x+math.sin(j*math.pi/n)*r*(.38 if j%2 else 1),y-math.cos(j*math.pi/n)*r*(.38 if j%2 else 1)) for j in range(n*2)],fill=rng.choice(colors))
-from atelier import illuminate
-illuminate(im)
 font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf',21)
 d.text((W//2,H*.49),'Happy birthday',font=font,anchor='mm',fill='#ffefc7')
 # Marbled buttercream, warped veins with hand-mixed pastel and saffron.
 g=field(u,v+.13*np.sin(u*2)); g=field(u+.20*g,v+.06*g)
 top=Image.fromarray(np.uint8(palette((np.sin(g*1.1)+1)/2,[(165,121,146),(198,154,156),(219,180,162),(234,207,177),(216,173,134),(235,207,179)])))
 with open('textures.js','w') as out:
-    for name,img in [('glaze',im),('cream',top.resize((768,256),Image.Resampling.LANCZOS))]:
+    top=top.resize((768,256),Image.Resampling.LANCZOS)
+    frost(top)
+    for name,img in [('glaze',im),('cream',top)]:
         buf=io.BytesIO();img.save(buf,'JPEG',quality=91)
         out.write("const "+name+"='data:image/jpeg;base64,"+base64.b64encode(buf.getvalue()).decode()+"';\n")
