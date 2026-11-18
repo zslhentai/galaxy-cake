@@ -1,0 +1,11 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>星河许愿 · Happy Birthday</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#080913;color:#f0d5a9}body{isolation:isolate;background:radial-gradient(ellipse at 51% 49%,#222031 0%,#111321 34%,#090a14 67%,#07080e)}.atlas{mask-image:radial-gradient(ellipse at 50% 51%,transparent 7%,#0009 23%,#000 38%);position:absolute;inset:0;pointer-events:none;background:url(atlas.png) center center/min(98vw,78vh) auto no-repeat}
+main{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);pointer-events:none}
+.stage{width:min(100%,90vh);height:min(110vw,78vh);flex:none;opacity:0;mix-blend-mode:screen;transform:translateY(9px);transition:opacity 1s ease,transform 1.3s ease}.stage canvas{display:block}
+footer{font:italic clamp(23px,3.3vh,36px) Georgia,serif;letter-spacing:.025em;color:#efcf9e;margin-top:clamp(3px,1.1vh,13px);opacity:0;text-align:center;transition:opacity .8s}.seen .stage{opacity:1;transform:none}.lit footer{opacity:1}
+#sky{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}button{position:absolute;inset:0;width:100%;border:0;background:none;color:#f2d8ae;cursor:pointer;font:italic clamp(24px,3.5vh,34px) Georgia,serif;letter-spacing:.02em;transition:opacity .32s}button span{color:#eed8b3;position:absolute;top:60%;left:0;width:100%;text-align:center}button:focus-visible{outline:1px solid #d5ba83;outline-offset:-9px}.started button{opacity:0;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.stage,footer,button{transition-duration:.15s}}
+</style>
+<div class="atlas" aria-hidden="true"></div><main><div class="stage"><canvas id="cake" aria-label="旋转的手绘星空蛋糕"></canvas></div><footer>Happy Birthday</footer></main><canvas id="sky" aria-hidden="true"></canvas><button type="button"><span>Tap to make a wish</span></button>
+<script src="wish.js"></script><script src="three.min.js"></script><script src="model.js"></script><script src="textures.js"></script><script src="software.js"></script><script src="scene.js"></script></html>
