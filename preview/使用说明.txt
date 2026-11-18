@@ -1,0 +1,12 @@
+星河生日蛋糕
+
+电脑观看
+将 ZIP 完整解压，双击 index.html，用 Chrome、Edge 或 Safari 打开。模型、纹理和 Three.js 已经随包提供，可离线观看。画面自动播放，每圈约 39 秒。
+
+手机观看
+把文件夹内的 index.html 和全部 .js 文件放到同一个静态网站目录，然后用手机浏览器访问该页面。支持按窗口尺寸自动构图。iOS 文件预览器可能不会执行网页脚本。
+
+制作与修改
+Cake.blend 包含在 Blender 4.3 中建立的蛋糕外壳和瓷盘基础网格。model.py 生成 Blender 工程与网页网格 model.js。其他装饰、材质、照明和动画由 scene.js 在运行时组装；完整成品在网页中观看。
+paint.py 用 NumPy、Pillow 生成环绕蛋糕的星河笔触和顶部大理石纹，输出 textures.js。修改或更换其中的字体路径后可在其他系统重制。编辑 scene.js 中 elapsed*.16 的系数可调整 WebGL 旋转速度；兼容版本对应 software.js 中 turn=t*.16。
+没有 WebGL 时，网页自动使用软件渲染。该模式根据 Blender 旋转体剖面计算蛋糕与盘面的可见位置，按深度绘制装饰并播放动画。两种模式的奶油边、光泽与星点分布略有差异。
