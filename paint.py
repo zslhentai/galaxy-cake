@@ -36,6 +36,8 @@ for i in range(2300):
 for i in range(68):
     x=rng.randrange(W); y=rng.randrange(H); r=rng.uniform(2,9); n=rng.choice([4,5])
     d.polygon([(x+math.sin(j*math.pi/n)*r*(.38 if j%2 else 1),y-math.cos(j*math.pi/n)*r*(.38 if j%2 else 1)) for j in range(n*2)],fill=rng.choice(colors))
+from atelier import illuminate
+illuminate(im)
 font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf',21)
 d.text((W//2,H*.49),'Happy birthday',font=font,anchor='mm',fill='#ffefc7')
 # Marbled buttercream, warped veins with hand-mixed pastel and saffron.

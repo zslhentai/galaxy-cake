@@ -2,7 +2,7 @@
 // Intersect camera rays with the rounded cake, porcelain profile and top surface;
 // retain the depth of each hit for occlusion of moving sugar decorations.
 async function softwareCake(){
- const old=document.querySelector('canvas'),canvas=old.cloneNode();old.replaceWith(canvas);
+ const old=document.querySelector('#cake'),canvas=old.cloneNode();old.replaceWith(canvas);
  const ctx=canvas.getContext('2d'),N=620,c=document.createElement('canvas');c.width=c.height=N;
  const g=c.getContext('2d'),tau=2*Math.PI,k=149,tilt=.32,co=Math.cos(tilt),si=Math.sin(tilt);
  function project(x,y,z){return [N/2+x*k,505-k*(y*co-z*si),y*si+z*co]}
@@ -10,7 +10,7 @@ async function softwareCake(){
  const [side,icing]=await Promise.all([pixels(glaze),pixels(cream)]);
  const frame=g.createImageData(N,N),base=new Uint8ClampedArray(frame.data.length),depth=new Float32Array(N*N).fill(-99),hits=[];
  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
- const X=(x-N/2)/k,V=(505-y)/k,i=y*N+x,j=i*4;let color=[8,9,14],D=-99;
+ const X=(x-N/2)/k,V=(505-y)/k,i=y*N+x,j=i*4;let color=[0,0,0],D=-99;
  // Revolve every ring from the Blender mesh. Intersections against each
  // truncated cone provide continuous surface normals, UVs and depth.
  for(const name of ['Porcelain','Glaze']){
@@ -55,11 +55,13 @@ async function softwareCake(){
  function halo(x,y,r,stops){const gr=g.createRadialGradient(x,y,0,x,y,r);stops.forEach(([p,c])=>gr.addColorStop(p,c));g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2)}
  const decor=chips.map(chip=>({...chip,phase:chip.p,h:1.457+.025*(1-chip.r)}));
  const shellColors=['#f1bba4','#e5a5c0','#f9d58c','#aebbdf','#f6c4a3'];
+ for(let i=0;i<35;i++){let radius=.39+.42*rnd();decor.push({a:rnd()*tau,r:radius,h:1.48,s:.012+.010*rnd(),phase:0,pearl:true,col:i%3?'#dcbb83':'#c9b5cc'})}
  for(let j=0;j<29;j++){
   const a=j*tau/29;decor.push({a,r:.939,h:1.444+.018*Math.sin(a*7),s:.10,col:shellColors[j%5],shell:true});
  }
  function draw(time){
- const t=time/1000,turn=t*.16,shift=.5-turn/tau;frame.data.set(base);
+ if(!ceremony.active){requestAnimationFrame(draw);return}
+ const t=time/1000,turn=ceremony.turn(time),shift=.5-turn/tau;frame.data.set(base);
  const phase=shift-Math.floor(shift),sideShift=Math.floor(phase*side.width),capShift=Math.floor(phase*icing.width);
  for(let i=0;i<count;i++){
   const cap=isCap[i],tex=cap?icing:side;
@@ -74,13 +76,13 @@ async function softwareCake(){
   e.x=N/2+e.r*Math.sin(angle)*k;e.y=505-k*(e.h*co-z*si);e.d=e.h*si+z*co;
   e.p=e.shell?angle:e.phase;
  }
- decor.sort((a,b)=>a.d-b.d);for(const e of decor){if(e.shell){g.save();g.translate(e.x,e.y);g.rotate(.18*Math.sin(e.p));const w=8+12*Math.abs(Math.cos(e.p)),gradient=g.createLinearGradient(0,-6,0,6);gradient.addColorStop(0,'#ebd7bf');gradient.addColorStop(.35,e.col);gradient.addColorStop(1,'#9a716f');g.fillStyle=gradient;g.beginPath();g.moveTo(-w,2);g.bezierCurveTo(-w*.6,-6,-w*.3,-8,0,-4);g.bezierCurveTo(w*.22,-8,w*.55,-2,w,2);g.quadraticCurveTo(0,10,-w,2);g.fill();g.strokeStyle='rgba(121,86,86,.38)';g.lineWidth=.85;for(let ridge=-1;ridge<=1;ridge++){g.beginPath();g.moveTo(-w*.72,3);g.bezierCurveTo(-w*.15,-6+ridge*2,w*.2,-5+ridge*2,w*.8,2+ridge);g.stroke()}g.restore()}else {star(e.x+.5,e.y+1.4,e.s*k,e.p+turn,'#9e806b',.55);star(e.x,e.y,e.s*k,e.p+turn,e.col,.55)}}
+ decor.sort((a,b)=>a.d-b.d);for(const e of decor){if(e.pearl){dot(e.x,e.y+1,k*e.s,'#926c60');dot(e.x,e.y,k*e.s,e.col);dot(e.x-.6,e.y-.8,k*e.s*.42,'#ffefc9')}else if(e.shell){g.save();g.translate(e.x,e.y);g.rotate(.18*Math.sin(e.p));const w=8+12*Math.abs(Math.cos(e.p)),gradient=g.createLinearGradient(0,-6,0,6);gradient.addColorStop(0,'#ebd7bf');gradient.addColorStop(.35,e.col);gradient.addColorStop(1,'#9a716f');g.fillStyle=gradient;g.beginPath();g.moveTo(-w,2);g.bezierCurveTo(-w*.6,-6,-w*.3,-8,0,-4);g.bezierCurveTo(w*.22,-8,w*.55,-2,w,2);g.quadraticCurveTo(0,10,-w,2);g.fill();g.strokeStyle='rgba(121,86,86,.38)';g.lineWidth=.85;for(let ridge=-1;ridge<=1;ridge++){g.beginPath();g.moveTo(-w*.72,3);g.bezierCurveTo(-w*.15,-6+ridge*2,w*.2,-5+ridge*2,w*.8,2+ridge);g.stroke()}g.restore()}else {star(e.x+.5,e.y+1.4,e.s*k,e.p+turn,'#9e806b',.55);star(e.x,e.y,e.s*k,e.p+turn,e.col,.55)}}
  const [cx,cy]=project(0,1.48,0),[,fy]=project(0,2.3,0),f=2*Math.sin(t*3.4)+.8*Math.sin(t*5.7);
- g.globalAlpha=.78+.05*Math.sin(t*5);halo(cx,cy,65,[[0,'rgba(255,202,75,.38)'],[1,'transparent']]);g.globalAlpha=1;let wax=g.createLinearGradient(cx-7,0,cx+7,0);[[0,'#ae7636'],[.25,'#f0c673'],[.52,'#ffedac'],[1,'#d99941']].forEach(([p,c])=>wax.addColorStop(p,c));g.fillStyle=wax;g.fillRect(cx-6,fy,12,cy-fy);g.fillStyle='#3e291d';g.fillRect(cx-1,fy-8,2,9);
- halo(cx,fy-18,56,[[0,'rgba(255,213,125,.85)'],[.22,'rgba(255,164,53,.37)'],[1,'transparent']]);
+ g.globalAlpha=ceremony.light(time)*(.78+.05*Math.sin(t*5));halo(cx,cy,65,[[0,'rgba(255,202,75,.38)'],[1,'transparent']]);g.globalAlpha=1;let wax=g.createLinearGradient(cx-7,0,cx+7,0);[[0,'#ae7636'],[.25,'#f0c673'],[.52,'#ffedac'],[1,'#d99941']].forEach(([p,c])=>wax.addColorStop(p,c));g.fillStyle=wax;g.fillRect(cx-6,fy,12,cy-fy);g.fillStyle='#3e291d';g.fillRect(cx-1,fy-8,2,9);
+ g.globalAlpha=ceremony.light(time);halo(cx,fy-18,62,[[0,'rgba(255,213,125,.85)'],[.22,'rgba(255,164,53,.37)'],[1,'transparent']]);
  for(let j=0;j<2;j++){g.save();g.translate(cx,fy-6);g.scale(j?.58:1,j?.73:1);g.fillStyle=j?'#fff9d5':'#ffbd55';g.beginPath();g.moveTo(0,0);g.bezierCurveTo(-17,-4,-5,-25,3+f,-55);g.bezierCurveTo(2+f,-31,21,-4,0,0);g.fill();g.restore()}
- air.forEach(({a,r,h,s,c,p},i)=>{const layer=i%3;a+=t*(.026+.012*(2-layer));const [x,y,d]=project(r*Math.sin(a),h+.027*Math.sin(t+p),r*Math.cos(a)-layer*.43);if(depth[Math.floor(y)*N+Math.floor(x)]>d)return;g.globalAlpha=(.69+.25*Math.sin(t*(.66+.04*p)+p)**2)/(1+.38*layer);if(i<21)star(x,y,k*s,p+t*.09,c);else dot(x,y,k*s,c)});g.globalAlpha=1;
- const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio,1.5);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width=w+'px';canvas.style.height=h+'px'}
- ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#08090e';ctx.fillRect(0,0,w,h);const size=Math.min(w*1.10,h*.9);ctx.drawImage(c,(w-size)/2,(h-size)/2-h*.025,size,size);requestAnimationFrame(draw)
- }requestAnimationFrame(draw)
+ g.globalAlpha=1;air.forEach(({a,r,h,s,c,p},i)=>{const layer=i%3;a+=t*(.026+.012*(2-layer));const [x,y,d]=project(r*Math.sin(a),h+.027*Math.sin(t+p),r*Math.cos(a)-layer*.43);if(depth[Math.floor(y)*N+Math.floor(x)]>d)return;g.globalAlpha=(.69+.25*Math.sin(t*(.66+.04*p)+p)**2)/(1+.38*layer);if(i<21)star(x,y,k*s,p+t*.09,c);else dot(x,y,k*s,c)});g.globalAlpha=1;
+ const w=ceremony.stage.clientWidth,h=ceremony.stage.clientHeight,dpr=Math.min(devicePixelRatio,1.5);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width=w+'px';canvas.style.height=h+'px'}
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,w,h);const size=Math.min(w*1.14,h*.985);ctx.drawImage(c,(w-size)/2,(h-size)/2+h*.008,size,size);requestAnimationFrame(draw)
+ }ceremony.ready();requestAnimationFrame(draw)
 }

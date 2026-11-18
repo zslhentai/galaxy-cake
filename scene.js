@@ -1,8 +1,8 @@
 (()=>{
 const T=THREE, pi=Math.PI, tau=2*pi;
 const scene=new T.Scene(), camera=new T.PerspectiveCamera(31,1,.1,60);
-let renderer;try {renderer=new T.WebGLRenderer({canvas:document.querySelector('canvas'),antialias:true})} catch { softwareCake();return }
-renderer.setClearColor(0x08090e);renderer.outputEncoding=T.sRGBEncoding;
+let renderer;try {renderer=new T.WebGLRenderer({canvas:document.querySelector('#cake'),antialias:true})} catch { softwareCake();return }
+renderer.setClearColor(0x000000);renderer.outputEncoding=T.sRGBEncoding;
 const cake=new T.Group();scene.add(cake);
 let seed=3199;
 function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
@@ -50,7 +50,7 @@ function candy(geometry,count,isStar){
  temp.position.set(r*Math.sin(a),1.396+.108*Math.sqrt(1-r*r)+(r>.83?.09:.014),r*Math.cos(a));
  temp.rotation.set(-pi/2+rand()*.7,rand()*.4,rand()*tau);temp.scale.setScalar(size);temp.updateMatrix();batch.setMatrixAt(i,temp.matrix);batch.setColorAt(i,new T.Color(sweets[i%sweets.length]))}
 }
-candy(star,29,true);candy(new T.IcosahedronGeometry(1,0),135,false);
+candy(new T.SphereGeometry(1,8,6),44,false);candy(star,29,true);candy(new T.IcosahedronGeometry(1,0),135,false);
 const wax=mesh(new T.CylinderGeometry(.043,.053,.81,32),surface(0xffcf73,.55),cake);wax.position.y=1.89;
 const wick=mesh(new T.CylinderGeometry(.009,.012,.074,12),surface(0x533833),cake);wick.position.y=2.31;
 const flameShape=new T.LatheGeometry([[.001,0],[.035,.014],[.06,.053],[.065,.094],[.058,.14],[.041,.2],[.023,.26],[.01,.33],[.001,.39]].map(v=>new T.Vector2(...v)),40);
@@ -92,13 +92,13 @@ for(let k=0;k<3;k++){
  scene.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color:k%2?0xd8aa78:0x99afca,transparent:true,opacity:.12+.05*(k%4)})))
 }
 let renderBudget=1.7,slowTime=0;
-function resize(){const w=innerWidth,h=innerHeight;renderer.setPixelRatio(Math.min(devicePixelRatio,renderBudget,w<600?1.5:1.7,Math.sqrt(2200000/(w*h))));dustUniforms.pixelScale.value=h*renderer.getPixelRatio()*.014;renderer.setSize(w,h);camera.aspect=w/h;camera.position.set(0,1.42+2.1*Math.max(1,.83/camera.aspect),6.98*Math.max(1,.83/camera.aspect));camera.lookAt(0,1.38,0);camera.updateProjectionMatrix()}
+function resize(){const w=ceremony.stage.clientWidth,h=ceremony.stage.clientHeight;renderer.setPixelRatio(Math.min(devicePixelRatio,renderBudget,w<600?1.5:1.7,Math.sqrt(2200000/(w*h))));dustUniforms.pixelScale.value=h*renderer.getPixelRatio()*.014;renderer.setSize(w,h);camera.aspect=w/h;camera.position.set(0,1.42+2.1*Math.max(1,.83/camera.aspect),6.98*Math.max(1,.83/camera.aspect));camera.lookAt(0,1.38,0);camera.updateProjectionMatrix()}
 onresize=resize;resize();
 let elapsed=0,last=performance.now();
-function frame(now){const dt=Math.min((now-last)/1000,.05);last=now;elapsed+=dt;
+function frame(now){ceremony.ready();if(!ceremony.active){last=now;requestAnimationFrame(frame);return}const dt=Math.min((now-last)/1000,.05);last=now;elapsed+=dt;
  slowTime=dt>.029?slowTime+dt:Math.max(0,slowTime-2*dt);
  if(slowTime>3 && renderBudget>1){renderBudget=Math.max(1,renderer.getPixelRatio()-.2);slowTime=0;resize()}
- cake.rotation.y=pi+elapsed*.16;flame.rotation.z=.057*Math.sin(elapsed*3.7)+.025*Math.sin(elapsed*6.1);flame.scale.y=1+.026*Math.sin(elapsed*5);lamp.intensity=1.13+.05*Math.sin(elapsed*5);
+ cake.rotation.y=pi+ceremony.turn(now);flame.rotation.z=.057*Math.sin(elapsed*3.7)+.025*Math.sin(elapsed*6.1);flame.scale.y=1+.026*Math.sin(elapsed*5);const ignition=ceremony.light(now);flame.visible=ignition>.005;flame.scale.y*=ignition;glow.material.opacity=ignition;lamp.intensity=ignition*(1.25+.06*Math.sin(elapsed*5));
  for(const {batch,items,big} of dust){items.forEach(({h,r,a,s,p},i)=>{let angle=a+elapsed*(.062+.022*Math.sin(p));temp.position.set(r*Math.sin(angle),h+.044*Math.sin(p+elapsed*.67),r*Math.cos(angle));temp.rotation.set(.17*Math.sin(p+elapsed*.22),big?.53*Math.sin(angle):0,p+elapsed*.07);temp.scale.setScalar(s*(.89+.16*Math.sin(elapsed*1.25+p)));temp.updateMatrix();batch.setMatrixAt(i,temp.matrix)});batch.instanceMatrix.needsUpdate=true}
  dustUniforms.time.value=elapsed;renderer.render(scene,camera);requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
