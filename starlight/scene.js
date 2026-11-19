@@ -1,11 +1,17 @@
 (()=>{
 const T=THREE, pi=Math.PI, tau=2*pi;
 const scene=new T.Scene(), camera=new T.OrthographicCamera(-2,2,2,-2,.1,60);
-let renderer;try {renderer=new T.WebGLRenderer({canvas:document.querySelector('#cake'),antialias:true,alpha:true})} catch { softwareCake();return }
+const canvas = document.querySelector('#cake');
+let renderer;
+try {
+ renderer = new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+} catch {
+ softwareCake();
+ return;
+}
+cakeView.bind(canvas);
 renderer.setClearColor(0x000000,0);renderer.outputEncoding=T.sRGBEncoding;
-const cake=new T.Group();scene.add(cake);
-let seed=3199;
-function rand(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
+const cake=new T.Group();cake.rotation.y=pi;scene.add(cake);
 const surface=(color,roughness=.48,extra={})=>new T.MeshStandardMaterial({color,roughness,...extra});
 function mesh(geo,mat,parent=scene){const m=new T.Mesh(geo,mat);parent.add(m);return m}
 function texture(url){const t=new T.TextureLoader().load(url);t.encoding=T.sRGBEncoding;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t}
@@ -14,15 +20,30 @@ function fromModel(name,mat,parent){
  g.setAttribute('position',new T.Float32BufferAttribute(points.flat(),3));g.setAttribute('uv',new T.Float32BufferAttribute(uv.flat(),2));g.setIndex(indices);g.computeVertexNormals();return mesh(g,mat,parent)
 }
 const paintedGlaze=texture(glaze);
-fromModel('Glaze',surface(0xffffff,.47,{map:paintedGlaze,bumpMap:paintedGlaze,bumpScale:.009}),cake);
-fromModel('Porcelain',surface(0xf3eff8,.24),scene);
-function ring(r,y,width,color){const m=mesh(new T.TorusGeometry(r,width,8,150),surface(color,.27));m.rotation.x=pi/2;m.position.y=y}
-ring(1.49,.082,.005,0xb79e7d);ring(1.485,.027,.015,0x387bd3);
+fromModel('Glaze',new T.MeshPhysicalMaterial({
+ map:paintedGlaze,bumpMap:paintedGlaze,bumpScale:.012,roughness:.43,clearcoat:.43,clearcoatRoughness:.47
+}),cake);
+fromModel('Porcelain',surface(0x433c75,.33,{metalness:.25}),scene);
+function ring(r,y,width,color,metalness=.5){
+ const m=mesh(new T.TorusGeometry(r,width,7,132),surface(color,.32,{metalness}));
+ m.rotation.x=pi/2;m.position.y=y;
+}
+ring(1.495,.082,.007,0xe6b970);ring(1.476,.091,.004,0xf4dca9);
+ring(1.375,.078,.004,0x9e7191);ring(1.483,.028,.011,0xb47a4b);
 function blobTexture(stops){
  const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d'),g=ctx.createRadialGradient(64,64,0,64,64,64);
- stops.forEach(([p,s])=>g.addColorStop(p,s));ctx.fillStyle=g;ctx.fillRect(0,0,128,128);return new T.CanvasTexture(c)
+ stops.forEach(([p,s])=>g.addColorStop(p,s));ctx.fillStyle=g;ctx.fillRect(0,0,128,128);const map=new T.CanvasTexture(c);map.encoding=T.sRGBEncoding;return map
 }
-const contact=mesh(new T.PlaneGeometry(2.72,2.72),new T.MeshBasicMaterial({map:blobTexture([[0,'#000'],[.68,'#000'],[.77,'rgba(20,16,36,.42)'],[.88,'transparent'],[1,'transparent']]),transparent:true,depthWrite:false}));contact.rotation.x=-pi/2;contact.position.y=.067;
+function floorGlow(y,size,stops,additive=false){
+ const m=mesh(new T.PlaneGeometry(size,size),new T.MeshBasicMaterial({
+  map:blobTexture(stops),transparent:true,depthWrite:false,
+  blending:additive?T.AdditiveBlending:T.NormalBlending
+ }));
+ m.rotation.x=-pi/2;m.position.y=y;
+}
+floorGlow(.072,2.64,[[0,'#070518'],[.72,'#070518'],[.79,'#08051a86'],[.94,'transparent'],[1,'transparent']]);
+floorGlow(-.072,4.94,[[0,'#050411'],[.53,'#09061be0'],[.68,'#0b082169'],[1,'transparent']]);
+floorGlow(-.081,5.24,[[0,'#3230aa40'],[.62,'#5144bb31'],[1,'transparent']],true);
 const frostingGeometry=new T.SphereGeometry(1,72,20);
 const frostPositions=frostingGeometry.getAttribute('position'),frostUV=frostingGeometry.getAttribute('uv');
 for(let i=0;i<frostUV.count;i++){
@@ -72,14 +93,48 @@ function arrangeSugar(pieces,parent){
 }
 arrangeSugar(decoration.candy,cake);
 arrangeSugar(decoration.plate,scene);
-const wax=mesh(new T.CylinderGeometry(.043,.053,.81,32),surface(0xffcf73,.55),cake);wax.position.y=1.89;
+const sugarMaterials = {
+ 'Gilded sugar': surface(0xeebf6a,.30,{metalness:.55}),
+ 'Moon pearl': surface(0xffe7b5,.29,{metalness:.18}),
+ 'Sapphire sugar': surface(0x6695dc,.30,{metalness:.32}),
+};
+for (const [kind,positions,indices] of blenderAdornments) {
+ const geometry = new T.BufferGeometry();
+ geometry.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+ geometry.setIndex(indices);
+ geometry.computeVertexNormals();
+ mesh(geometry,sugarMaterials[kind],cake);
+}
+
+const wax=mesh(new T.CylinderGeometry(.043,.053,.79,32),surface(0xffe2a4,.42),cake);
+wax.position.y=1.89;
 const wick=mesh(new T.CylinderGeometry(.009,.012,.074,12),surface(0x533833),cake);wick.position.y=2.31;
 const flameShape=new T.LatheGeometry([[.001,0],[.035,.014],[.06,.053],[.065,.094],[.058,.14],[.041,.2],[.023,.26],[.01,.33],[.001,.42]].map(v=>new T.Vector2(...v)),40);
 const flame=mesh(flameShape,new T.ShaderMaterial({vertexShader:'varying float h;void main(){h=position.y;vec3 p=position;p.x+=.032*pow(h/.39,2.);gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',fragmentShader:'varying float h;void main(){vec3 c=mix(vec3(1.,.52,.12),vec3(1.,.98,.83),smoothstep(0.,.09,h));c=mix(c,vec3(1.,.75,.33),smoothstep(.15,.39,h));gl_FragColor=vec4(c,1.);}' }));flame.position.y=2.32;
 const glow=new T.Sprite(new T.SpriteMaterial({map:blobTexture([[0,'rgba(255,237,170,.94)'],[.15,'rgba(255,187,75,.5)'],[.42,'rgba(244,145,52,.13)'],[1,'transparent']]),blending:T.AdditiveBlending,transparent:true,depthWrite:false}));glow.scale.set(.78,.96,1);glow.position.y=2.46;scene.add(glow);
-const lamp=new T.PointLight(0xffb457,1.4,3);lamp.position.y=2.42;scene.add(lamp,new T.HemisphereLight(0xfff4e6,0x929abe,.69));
+const lamp=new T.PointLight(0xffb457,1.4,3);lamp.position.y=2.42;
+scene.add(lamp,new T.HemisphereLight(0xfff4e6,0x979ac4,.70));
 function light(x,y,z,color,power){const l=new T.DirectionalLight(color,power);l.position.set(x,y,z);scene.add(l)}
-light(-3,5,4,0xffeddf,.74);light(3,3,-4,0x94baff,1.06);
+light(-3,5,4,0xffe4ca,1.1);light(3,4,-4,0x93b4ff,1.43);light(4,1,3,0xb4a1e8,.43);
+function environment() {
+ const surface=document.createElement('canvas');
+ surface.width=256;surface.height=128;
+ const ctx=surface.getContext('2d');
+ ctx.fillStyle='#272436';ctx.fillRect(0,0,256,128);
+ for (const [x,y,rx,ry,color] of [[57,35,48,21,'#fff2df'],[155,40,20,32,'#c9d9ff'],[227,61,20,15,'#a89ccb']]) {
+  ctx.save();ctx.translate(x,y);ctx.scale(rx,ry);
+  const gradient=ctx.createRadialGradient(0,0,0,0,0,1);
+  gradient.addColorStop(0,color);gradient.addColorStop(.38,color+'d4');gradient.addColorStop(1,color+'00');
+  ctx.fillStyle=gradient;ctx.fillRect(-1,-1,2,2);ctx.restore();
+ }
+ const image=new T.CanvasTexture(surface);
+ image.encoding=T.sRGBEncoding;image.mapping=T.EquirectangularReflectionMapping;
+ const pmrem=new T.PMREMGenerator(renderer);
+ const target=pmrem.fromEquirectangular(image);
+ image.dispose();pmrem.dispose();
+ return target.texture;
+}
+scene.environment=environment();
 const floaters=[];
 for(const [shape,geometry] of Object.entries({star,gem,chip})){
  const items=decoration.orbit.filter(p=>p.shape===shape);
@@ -118,41 +173,45 @@ const dust=new T.Points(mist,new T.ShaderMaterial({
  }`
 }));
 dust.frustumCulled=false;scene.add(dust);
-const tilt=.315,cosTilt=Math.cos(tilt),sinTilt=Math.sin(tilt);
-const target= (514-310)/155;
-const contour=[
- [247,248,.026,3.23,5.9,0xefc992,.51],[252,252,-.025,2.83,4.36,0xa3bddd,.33],
- [254,256,-.031,4.32,6.1,0xf3c68c,.26],[239,243,.007,2.91,4.48,0x99c4f0,.4],
- [243,245,.06,4.94,6.45,0x72a5d7,.23]
-];
-for(const [rx,ry,rotation,start,end,color,opacity] of contour){
- const pts=[];
- for(let j=0;j<=104;j++){
-  const a=start+(end-start)*j/104;
-  const x=rx*Math.cos(a),y=ry*Math.sin(a);
-  const vx=(x*Math.cos(rotation)-y*Math.sin(rotation))/155;
-  const vy=target+(24-x*Math.sin(rotation)-y*Math.cos(rotation))/155;
-  pts.push(new T.Vector3(vx,vy/cosTilt-.87*sinTilt,-.87*cosTilt));
- }
- scene.add(new T.Line(new T.BufferGeometry().setFromPoints(pts),new T.LineBasicMaterial({color,transparent:true,opacity,depthWrite:false})));
-}
-let renderBudget=1.7,slowTime=0;
+let renderBudget=1.65,slowTime=0;
+const focus=new T.Vector3(0,1.32,0);
+let stageSize=1;
+
 function resize(){
  const w=ceremony.stage.clientWidth,h=ceremony.stage.clientHeight;
- const ratio=Math.min(devicePixelRatio,renderBudget,w<600?1.5:1.7,Math.sqrt(2200000/(w*h)));
- const size=Math.min(w*1.09,h*.995);
- renderer.setPixelRatio(ratio);renderer.setSize(w,h);
- dustUniforms.pixelScale.value=size*155/620*ratio;
- camera.left=-2*w/size;camera.right=2*w/size;camera.top=2*h/size;camera.bottom=-2*h/size;
- camera.position.set(0,target/cosTilt+8*sinTilt,8*cosTilt);
- camera.lookAt(0,target/cosTilt,0);camera.updateProjectionMatrix();
+ const ratio=Math.min(devicePixelRatio,renderBudget,w<600?1.5:1.65,Math.sqrt(1850000/(w*h)));
+ stageSize=Math.min(w*1.148,h*.91);
+ renderer.setPixelRatio(ratio);renderer.setSize(w,h,false);
+ camera.left=-2*w/stageSize;camera.right=2*w/stageSize;
+ camera.top=2*h/stageSize;camera.bottom=-2*h/stageSize;
+ camera.updateProjectionMatrix();
 }
 addEventListener('resize',resize);resize();
-let elapsed=0,last=performance.now();
-function frame(now){ceremony.ready();if(!ceremony.active){last=now;requestAnimationFrame(frame);return}const dt=Math.min((now-last)/1000,.05);last=now;elapsed+=dt;
+
+let elapsed=0,last=0;
+function frame(now){
+ requestAnimationFrame(frame);
+ if(!ceremony.active){last=now;return}
+ const dt=Math.min((now-last)/1000,.05);
+ last=now;
+ if(!ceremony.reduced)elapsed+=dt;
  slowTime=dt>.029?slowTime+dt:Math.max(0,slowTime-2*dt);
- if(slowTime>3 && renderBudget>1){renderBudget=Math.max(1,renderer.getPixelRatio()-.2);slowTime=0;resize()}
- cake.rotation.y=pi+ceremony.turn(now);flame.rotation.z=.057*Math.sin(elapsed*3.7)+.025*Math.sin(elapsed*6.1);flame.scale.y=1+.026*Math.sin(elapsed*5);const ignition=ceremony.light(now);flame.visible=ignition>.005;flame.scale.y*=ignition;glow.material.opacity=ignition;lamp.intensity=ignition*(1.25+.06*Math.sin(elapsed*5));
+ if(slowTime>3 && renderBudget>1){
+  renderBudget=Math.max(1,renderer.getPixelRatio()-.17);slowTime=0;resize();
+ }
+ const {yaw,pitch,zoom}=cakeView.update(now);
+ const radius=8*Math.cos(pitch);
+ camera.position.set(radius*Math.sin(yaw),focus.y+8*Math.sin(pitch),radius*Math.cos(yaw));
+ camera.lookAt(focus);
+ if(Math.abs(camera.zoom-zoom)>.00005){camera.zoom=zoom;camera.updateProjectionMatrix()}
+ dustUniforms.pixelScale.value=stageSize*.25*renderer.getPixelRatio()*zoom;
+
+ const ignition=ceremony.light(now);
+ flame.visible=ignition>.005;
+ flame.rotation.z=.057*Math.sin(elapsed*3.7)+.025*Math.sin(elapsed*6.1);
+ flame.scale.y=ignition*(1+.047*Math.sin(elapsed*5));
+ glow.material.opacity=ignition*.72;
+ lamp.intensity=ignition*(1.63+.1*Math.sin(elapsed*5));
  for(const {batch,items} of floaters){
   items.forEach((p,i)=>{
    const a=p.a+elapsed*p.speed,z=p.radius*Math.cos(a);
@@ -163,6 +222,9 @@ function frame(now){ceremony.ready();if(!ceremony.active){last=now;requestAnimat
   });
   batch.instanceMatrix.needsUpdate=true;
  }
- dustUniforms.time.value=elapsed;renderer.render(scene,camera);requestAnimationFrame(frame)}
+ dustUniforms.time.value=elapsed;
+ renderer.render(scene,camera);
+}
+ceremony.ready();
 requestAnimationFrame(frame);
 })();

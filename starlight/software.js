@@ -3,6 +3,7 @@
 // retain the depth of each hit for occlusion of moving sugar decorations.
 async function softwareCake(){
  const old=document.querySelector('#cake'),canvas=old.cloneNode();old.replaceWith(canvas);
+ cakeView.bind(canvas,false);
  const ctx=canvas.getContext('2d'),N=620,c=document.createElement('canvas');c.width=c.height=N;
  const g=c.getContext('2d'),tau=2*Math.PI,k=155,tilt=.315,co=Math.cos(tilt),si=Math.sin(tilt);
  function project(x,y,z){return [N/2+x*k,514-k*(y*co-z*si),y*si+z*co]}
@@ -129,7 +130,8 @@ async function softwareCake(){
   requestAnimationFrame(draw);
   if(!ceremony.active || time-last<14)return;
   last=time;
-  const t=time/1000,turn=ceremony.turn(time),shift=.5-turn/tau;
+  const view=cakeView.update(time);
+  const t=ceremony.reduced?0:time/1000,turn=-view.yaw,shift=.5-turn/tau;
   frame.data.set(base);
   const phase=shift-Math.floor(shift),sideShift=Math.floor(phase*side.width),capShift=Math.floor(phase*icing.width);
   for(let i=0;i<count;i++){
@@ -186,8 +188,9 @@ async function softwareCake(){
   if(canvas.width!==dw||canvas.height!==dh){canvas.width=dw;canvas.height=dh;canvas.style.width=w+'px';canvas.style.height=h+'px'}
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,w,h);
-  const size=Math.min(w*1.09,h*.995);
-  ctx.drawImage(c,(w-size)/2,(h-size)/2,size,size);
+  const size=Math.min(w*1.148,h*.91)*view.zoom;
+  const centerY=514-k*1.32*co;
+  ctx.drawImage(c,(w-size)/2,h/2-size*centerY/N,size,size);
  }
  ceremony.ready();
  requestAnimationFrame(draw);

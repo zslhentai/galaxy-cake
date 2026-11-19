@@ -1,1 +1,51 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>星河 · Happy birthday</title><style>*{box-sizing:border-box}body{margin:0;background:#08090e;overflow:hidden}canvas{display:block;touch-action:none}footer{position:absolute;bottom:5%;width:100%;text-align:center;color:#f1dcb1;font:italic clamp(21px,3.2vh,34px) Georgia,serif;pointer-events:none;letter-spacing:.025em}</style><canvas aria-label="旋转的星空艺术生日蛋糕"></canvas><footer>Happy birthday</footer><script src="three.min.js"></script><script src="model.js"></script><script src="textures.js"></script><script src="software.js"></script><script src="scene.js"></script></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<base href="./starlight/">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070817">
+<title>星河许愿 · Happy Birthday</title>
+<link rel="stylesheet" href="starlight.css">
+</head>
+<body>
+<div class="nebula" aria-hidden="true"></div>
+<canvas id="sky" aria-hidden="true"></canvas>
+<section class="opening" id="opening" aria-labelledby="opening-title">
+  <div class="opening-card">
+    <div class="seal-space" aria-hidden="true"></div>
+    <p class="kicker">A BIRTHDAY WISH</p>
+    <h1 id="opening-title">星河许愿</h1>
+    <p class="opening-note">今晚的星光，留给你的愿望。</p>
+    <button class="enter" id="enter" type="button"><span aria-hidden="true">✧</span> 点亮星河</button>
+  </div>
+</section>
+<main class="experience" id="experience" inert aria-hidden="true">
+  <header class="greeting">
+    <p class="kicker">星 河 许 愿</p>
+    <h2 id="birthday" tabindex="-1">Happy Birthday</h2>
+  </header>
+  <div class="stage">
+    <canvas id="cake" tabindex="0" aria-label="星空蛋糕 3D 视图" aria-describedby="gestures"></canvas>
+  </div>
+  <div class="view-controls">
+    <div class="view-actions" role="group" aria-label="蛋糕视角">
+      <button type="button" data-camera="zoom-out" aria-label="缩小" title="缩小">−</button>
+      <button type="button" data-camera="reset" aria-label="复位视角" title="复位视角">↺</button>
+      <button type="button" data-camera="zoom-in" aria-label="放大" title="放大">＋</button>
+    </div>
+    <p id="gestures" class="gesture-hint"><span class="mouse-hint">拖动旋转 · 滚轮缩放</span><span class="touch-hint">拖动旋转 · 双指缩放</span></p>
+  </div>
+  <button type="button" id="sound" class="sound" aria-pressed="false" aria-label="背景音乐" title="背景音乐">
+    <span aria-hidden="true" class="sound-bars"><i></i><i></i><i></i><i></i></span>
+    <span class="sound-label">开启音乐</span>
+  </button>
+  <p id="status" class="sr-only" role="status"></p>
+</main>
+<audio id="bgm" src="../视频转音频 2026年11月18日 23:37.m4a" loop preload="none"></audio>
+<script defer src="wish.js"></script><script defer src="view.js"></script>
+<script defer src="three.min.js"></script><script defer src="model.js"></script>
+<script defer src="adornments.js"></script><script defer src="textures.js"></script>
+<script defer src="decor.js"></script><script defer src="software.js"></script><script defer src="scene.js"></script>
+</body>
+</html>
