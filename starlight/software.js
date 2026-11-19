@@ -28,12 +28,12 @@ async function softwareCake(){
    if(H<Math.min(h0,h1)-.00001||H>Math.max(h0,h1)+.00001||R<Math.min(r0,r1)-.0001||R>Math.max(r0,r1)+.0001)continue;
    D=d;const norm=Math.hypot(dr,dh),nx=X/R*dh/norm,ny=-dr/norm,nz=Z/R*dh/norm;
    const l=.67+.37*Math.max(0,-.55*nx+.69*ny+.48*nz);
-   if(name==='Porcelain'){const sh=1-.47*Math.exp(-(((R-1)/.13)**2));color=H<.053&&R>1.42?[133*l,81*l,63*l]:[103*l*sh,89*l*sh,144*l*sh];if((R>1.479&&ny>.2)||Math.abs(R-1.373)<.005)color=[218,175,108]}
+   if(name==='Porcelain'){const sh=1-.47*Math.exp(-(((R-1)/.13)**2));color=H<.053&&R>1.42?[112*l,67*l,50*l]:[74*l*sh,63*l*sh,111*l*sh];if(R>1.479&&ny>.2)color=[194,147,89];else if(Math.abs(R-1.373)<.005)color=[134,96,103]}
    else color={u:Math.atan2(X,Z)/tau,v:1-H/1.44,l,shine:12*Math.pow(Math.max(0,nz*.88-nx*.46),10)};
   }
  }}
  const d=(1.44-V*co)/si,Z=-V*si+d*co,R=Math.hypot(X,Z);
- if(R<=.984&&d>D){D=d;color={top:true,u:Math.atan2(X,Z)/tau,v:R,l:.82+.22*(1-R),shine:3}}
+ if(R<=.984&&d>D){D=d;color={top:true,u:Math.atan2(X,Z)/tau,v:R/.992,l:.84+.14*(1-R),shine:2}}
  depth[i]=D;
  if(Array.isArray(color)){for(let n=0;n<3;n++)base[j+n]=color[n]}else hits.push([j,color.u,color.v,color.l,color.shine,color.top?1:0]);base[j+3]=D>-99?255:0;
  }
@@ -47,11 +47,11 @@ async function softwareCake(){
   gain[i]=l;spec[i]=shine;isCap[i]=cap;
  }
  hits.length=0;
- const amber=['#f6dc9d','#dcbeac','#d1bcdc','#b8d7dc','#f3cd96','#d9acd3'];
+ const shellTints=decoration.piping;
  const candy=decoration.candy.map(piece=>({...piece}));
  const plate=decoration.plate.map(piece=>({...piece,x:0,screenY:0,d:0}));
  const shells=Array.from({length:29},(_,i)=>({
-  angle:i*tau/29,radius:.938,y:1.454+.018*Math.sin(i*2.4),color:amber[i%amber.length],
+  angle:i*tau/29,radius:.938,y:1.454+.018*Math.sin(i*2.4),color:shellTints[i%shellTints.length],
   shape:'shell',size:.068+.034*(.5+.5*Math.sin(i*4.2)),phase:0
  }));
  candy.push(...shells);
@@ -88,8 +88,8 @@ async function softwareCake(){
   for(const [p,color] of stops)gradient.addColorStop(p,color);
   g.fillStyle=gradient;g.fillRect(x-r,y-r,2*r,2*r);
  }
- const creamLight=[[0,'rgba(255,206,102,.46)'],[.42,'rgba(255,179,70,.22)'],[1,'transparent']];
- const fireLight=[[0,'rgba(255,228,159,.82)'],[.22,'rgba(255,164,53,.37)'],[1,'transparent']];
+ const creamLight=[[0,'rgba(255,200,121,.26)'],[.42,'rgba(255,179,84,.12)'],[1,'transparent']];
+ const fireLight=[[0,'rgba(255,228,159,.68)'],[.22,'rgba(255,164,53,.28)'],[1,'transparent']];
  const wax= g.createLinearGradient(N/2-7,0,N/2+7,0);
  for(const [p,color] of [[0,'#ab6c31'],[.27,'#e7b256'],[.55,'#fff0ba'],[1,'#d79b4a']])wax.addColorStop(p,color);
  const dome=[
@@ -106,7 +106,7 @@ async function softwareCake(){
    g.save();g.translate(x,y);g.rotate(.24*Math.sin(spin));
    const w=r*(.73+.57*Math.abs(Math.cos(spin))),h=4.5+r*.32;
    const gradient=g.createLinearGradient(0,-h,0,h);
-   gradient.addColorStop(0,'#fff1cf');gradient.addColorStop(.47,color);gradient.addColorStop(1,'#8f687d');
+   gradient.addColorStop(0,'#efdbc2');gradient.addColorStop(.46,color);gradient.addColorStop(1,'#88677e');
    g.fillStyle=gradient;g.beginPath();g.moveTo(-w,2);g.bezierCurveTo(-w*.8,-h,-w*.32,-h*1.18,w*.04,-h*.62);
    g.bezierCurveTo(w*.44,-h*1.02,w*.52,h*.1,w,h*.18);g.quadraticCurveTo(w*.34,h*.94,-w,2);g.fill();
    g.strokeStyle='#876e805e';g.lineWidth=.78;
@@ -175,9 +175,11 @@ async function softwareCake(){
   if(!ceremony.active || time-last<14)return;
   last=time;
   const view=cakeView.update(time);
-  const t=ceremony.reduced?0:time/1000,turn=-view.yaw,shift=.5-turn/tau;
+  const t=ceremony.reduced?0:time/1000,turn=-view.yaw,shift=-turn/tau;
   frame.data.set(base);
-  const phase=shift-Math.floor(shift),sideShift=Math.floor(phase*side.width),capShift=Math.floor(phase*icing.width);
+  const wrap=angle=>angle-Math.floor(angle);
+  const sideShift=Math.floor(wrap(shift+.5)*side.width);
+  const capShift=Math.floor(wrap(shift+.25)*icing.width);
   for(let i=0;i<count;i++){
    const cap=isCap[i],tex=cap?icing:side;
    let col=columns[i]+(cap?capShift:sideShift);
@@ -204,7 +206,7 @@ async function softwareCake(){
   const [cx,cy]=project(0,1.52,0),[,fy]=project(0,2.3,0);
   const flicker=2.1*Math.sin(t*3.5)+.9*Math.sin(t*5.7),ignition=ceremony.light(time);
   g.globalAlpha=ignition*(.82+.05*Math.sin(t*5));
-  halo(cx,cy,91,creamLight);g.globalAlpha=1;
+  halo(cx,cy,53,creamLight);g.globalAlpha=1;
   g.fillStyle=wax;g.fillRect(cx-5,fy,10,cy-fy);
   g.save();g.beginPath();g.rect(cx-5,fy,10,cy-fy);g.clip();
   g.strokeStyle='#9a653eab';g.lineWidth=1.2;
@@ -213,7 +215,7 @@ async function softwareCake(){
   }
   g.restore();
   g.fillStyle='#382a22';g.fillRect(cx-1,fy-8,2,9);
-  g.globalAlpha=ignition;halo(cx,fy-24,65,fireLight);
+  g.globalAlpha=ignition;halo(cx,fy-24,53,fireLight);
   for(let j=0;j<2;j++){
    g.save();g.translate(cx,fy-6);g.scale(j?.56:1,j?.76:1);
    g.fillStyle=j?'#fffdf1':'#f8b641';
@@ -224,7 +226,7 @@ async function softwareCake(){
    const a=p.a+t*p.speed,z=p.radius*Math.cos(a),y=p.y+p.lift*Math.sin(t*.55+p.phase);
    const px=N/2+p.radius*Math.sin(a)*k,py=514-k*(y*co-z*si),d=y*si+z*co;
    if(depth[Math.floor(py)*N+Math.floor(px)]>d)continue;
-   const front=Math.max(0,Math.min(1,(z+1.7)/3.4)),r=k*p.size*(.71+.45*front);
+   const front=Math.max(0,Math.min(1,(z+1.7)/3.4)),r=k*p.size*decoration.orbitScale(p.shape,a)*(.76+.29*front);
    g.globalAlpha=(.42+.39*front)*(.78+.22*Math.sin(t*.72+p.phase)**2);
    if(p.shape==='star')star(px,py,r,p.phase+t*.07,p.color);
    else if(p.shape==='light'){

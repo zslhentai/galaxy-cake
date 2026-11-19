@@ -13,6 +13,17 @@ cakeView.bind(canvas);
 renderer.setClearColor(0x000000,0);renderer.outputEncoding=T.sRGBEncoding;
 const cake=new T.Group();cake.rotation.y=pi;scene.add(cake);
 const surface=(color,roughness=.48,extra={})=>new T.MeshStandardMaterial({color,roughness,...extra});
+const srgb=color=>new T.Color(color).convertSRGBToLinear();
+function softenCreamHighlights(shader){
+ // Roll off the brightest channel before sRGB encoding, preserving hue and midtones.
+ shader.fragmentShader=shader.fragmentShader.replace('#include <tonemapping_fragment>',`
+  float peak = max(gl_FragColor.r, max(gl_FragColor.g, gl_FragColor.b));
+  float excess = max(peak - 0.54, 0.0);
+  float shoulder = 0.38 * (1.0 - exp(-excess / 0.38));
+  gl_FragColor.rgb *= (min(peak, 0.54) + shoulder) / max(peak, 0.0001);
+  #include <tonemapping_fragment>
+ `);
+}
 function mesh(geo,mat,parent=scene){const m=new T.Mesh(geo,mat);parent.add(m);return m}
 function texture(url){const t=new T.TextureLoader().load(url);t.encoding=T.sRGBEncoding;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());return t}
 function fromModel(name,mat,parent){
@@ -23,13 +34,13 @@ const paintedGlaze=texture(glaze);
 fromModel('Glaze',new T.MeshPhysicalMaterial({
  map:paintedGlaze,bumpMap:paintedGlaze,bumpScale:.012,roughness:.43,clearcoat:.43,clearcoatRoughness:.47
 }),cake);
-fromModel('Porcelain',surface(0x433c75,.33,{metalness:.25}),scene);
+fromModel('Porcelain',surface(srgb(0x51466f),.65,{metalness:.16,envMapIntensity:.68}),scene);
 function ring(r,y,width,color,metalness=.5){
- const m=mesh(new T.TorusGeometry(r,width,7,132),surface(color,.32,{metalness}));
+ const m=mesh(new T.TorusGeometry(r,width,7,132),surface(srgb(color),.44,{metalness}));
  m.rotation.x=pi/2;m.position.y=y;
 }
-ring(1.495,.082,.007,0xe6b970);ring(1.476,.091,.004,0xf4dca9);
-ring(1.375,.078,.004,0x9e7191);ring(1.483,.028,.011,0xb47a4b);
+ring(1.495,.082,.007,0xdaaa67);ring(1.476,.091,.004,0xe2bc80);
+ring(1.375,.078,.004,0x80596a);ring(1.483,.028,.011,0xaa713f);
 function blobTexture(stops){
  const c=document.createElement('canvas');c.width=c.height=128;const ctx=c.getContext('2d'),g=ctx.createRadialGradient(64,64,0,64,64,64);
  stops.forEach(([p,s])=>g.addColorStop(p,s));ctx.fillStyle=g;ctx.fillRect(0,0,128,128);const map=new T.CanvasTexture(c);map.encoding=T.sRGBEncoding;return map
@@ -50,22 +61,33 @@ for(let i=0;i<frostUV.count;i++){
  // Preserve the seam already present in the sphere's longitudinal UV.
  frostUV.setY(i,1-Math.hypot(frostPositions.getX(i),frostPositions.getZ(i)));
 }
-const top=mesh(frostingGeometry,surface(0xffffff,.55,{map:texture(cream)}),cake);top.scale.set(.992,.112,.992);top.position.y=1.385;
+const paintedCream=texture(cream);
+const top=mesh(frostingGeometry,surface(0xffffff,.78,{
+ map:paintedCream,bumpMap:paintedCream,bumpScale:.0055,envMapIntensity:.6
+}),cake);
+top.material.onBeforeCompile=softenCreamHighlights;
+top.scale.set(.992,.112,.992);top.position.y=1.385;
 // Sweep a ridged piping nozzle through tapered shell-shaped arcs.
 const vertices=[],faces=[],tints=[];
-const palette=[0xf6dc9d,0xdcbeac,0xeeacd0,0xb8d7dc,0xf3cd96,0xd9acd3];
+const palette=decoration.piping.map(srgb);
 for(let k=0;k<29;k++){
- const a=k*tau/29, tint=new T.Color(palette[k%palette.length]),offset=vertices.length/3;
+ const a=k*tau/29, tint=palette[k%palette.length],offset=vertices.length/3;
  for(let j=0;j<=12;j++){
   const t=j/12, angle=a+.26*t, rad=.895+.043*Math.sin(t*pi), y=1.439+.073*Math.sin(t*pi);
   for(let q=0;q<=24;q++){
    const b=q*tau/24,amp=.108*(.025+Math.pow(Math.sin(pi*t),.68))*(1+.22*Math.cos(6*b+t*4)),r=rad+amp*Math.cos(b);
-   vertices.push(r*Math.sin(angle),y+amp*Math.sin(b)*.8,r*Math.cos(angle));const ao=.76+.24*(.5+.5*Math.sin(b))*(.76+.24*Math.cos(6*b+t*4));tints.push(tint.r*ao,tint.g*ao,tint.b*ao);
+   vertices.push(r*Math.sin(angle),y+amp*Math.sin(b)*.8,r*Math.cos(angle));
+   const ridge=.5+.5*Math.cos(6*b+t*4);
+   const ao=(.74+.26*(.5+.5*Math.sin(b)))*(.74+.26*ridge);
+   tints.push(tint.r*ao,tint.g*ao,tint.b*ao);
    if(j<12&&q<24){let i=offset+j*25+q;faces.push(i,i+25,i+1,i+1,i+25,i+26)}
   }
  }
 }
-const piping=new T.BufferGeometry();piping.setIndex(faces);piping.setAttribute('position',new T.Float32BufferAttribute(vertices,3));piping.setAttribute('color',new T.Float32BufferAttribute(tints,3));piping.computeVertexNormals();mesh(piping,surface(0xffffff,.56,{vertexColors:true,side:T.DoubleSide}),cake);
+const piping=new T.BufferGeometry();piping.setIndex(faces);piping.setAttribute('position',new T.Float32BufferAttribute(vertices,3));piping.setAttribute('color',new T.Float32BufferAttribute(tints,3));piping.computeVertexNormals();
+const shellMaterial=surface(0xffffff,.75,{vertexColors:true,side:T.DoubleSide,envMapIntensity:.57});
+shellMaterial.onBeforeCompile=softenCreamHighlights;
+mesh(piping,shellMaterial,cake);
 const outline=new T.Shape();
 for(let j=0;j<10;j++){let a=j*pi/5,r=j%2?.44:1;outline[j?'lineTo':'moveTo'](r*Math.sin(a),r*Math.cos(a))}
 outline.closePath();
@@ -81,22 +103,22 @@ function arrangeSugar(pieces,parent){
  for(const shape of Object.keys(candyGeometry)){
   const items=pieces.filter(p=>p.shape===shape);
   if(!items.length)continue;
-  const batch=new T.InstancedMesh(candyGeometry[shape],surface(0xffffff,.4,{metalness:.08}),items.length);
+  const batch=new T.InstancedMesh(candyGeometry[shape],surface(0xffffff,.56,{metalness:.08,envMapIntensity:.7}),items.length);
   parent.add(batch);
   items.forEach((p,i)=>{
    temp.position.set(p.radius*Math.sin(p.angle),p.y,p.radius*Math.cos(p.angle));
    temp.rotation.set(-pi/2+Math.sin(p.phase)*.21,0,p.phase);
    temp.scale.setScalar(p.size);
-   temp.updateMatrix();batch.setMatrixAt(i,temp.matrix);batch.setColorAt(i,new T.Color(p.color));
+   temp.updateMatrix();batch.setMatrixAt(i,temp.matrix);batch.setColorAt(i,srgb(p.color));
   });
  }
 }
 arrangeSugar(decoration.candy,cake);
 arrangeSugar(decoration.plate,scene);
 const sugarMaterials = {
- 'Gilded sugar': surface(0xeebf6a,.30,{metalness:.55}),
- 'Moon pearl': surface(0xffe7b5,.29,{metalness:.18}),
- 'Sapphire sugar': surface(0x6695dc,.30,{metalness:.32}),
+ 'Gilded sugar': surface(srgb(0xf1c375),.41,{metalness:.44}),
+ 'Moon pearl': surface(srgb(0xf5d4a4),.43,{metalness:.13}),
+ 'Sapphire sugar': surface(srgb(0x82a8d8),.39,{metalness:.26}),
 };
 for (const [kind,positions,indices] of blenderAdornments) {
  const geometry = new T.BufferGeometry();
@@ -106,16 +128,18 @@ for (const [kind,positions,indices] of blenderAdornments) {
  mesh(geometry,sugarMaterials[kind],cake);
 }
 
-const wax=mesh(new T.CylinderGeometry(.043,.053,.79,32),surface(0xffe2a4,.42),cake);
+const wax=mesh(new T.CylinderGeometry(.043,.053,.79,32),surface(srgb(0xe9c39a),.61),cake);
 wax.position.y=1.89;
 const wick=mesh(new T.CylinderGeometry(.009,.012,.074,12),surface(0x533833),cake);wick.position.y=2.31;
 const flameShape=new T.LatheGeometry([[.001,0],[.035,.014],[.06,.053],[.065,.094],[.058,.14],[.041,.2],[.023,.26],[.01,.33],[.001,.42]].map(v=>new T.Vector2(...v)),40);
 const flame=mesh(flameShape,new T.ShaderMaterial({vertexShader:'varying float h;void main(){h=position.y;vec3 p=position;p.x+=.032*pow(h/.39,2.);gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',fragmentShader:'varying float h;void main(){vec3 c=mix(vec3(1.,.52,.12),vec3(1.,.98,.83),smoothstep(0.,.09,h));c=mix(c,vec3(1.,.75,.33),smoothstep(.15,.39,h));gl_FragColor=vec4(c,1.);}' }));flame.position.y=2.32;
-const glow=new T.Sprite(new T.SpriteMaterial({map:blobTexture([[0,'rgba(255,237,170,.94)'],[.15,'rgba(255,187,75,.5)'],[.42,'rgba(244,145,52,.13)'],[1,'transparent']]),blending:T.AdditiveBlending,transparent:true,depthWrite:false}));glow.scale.set(.78,.96,1);glow.position.y=2.46;scene.add(glow);
-const lamp=new T.PointLight(0xffb457,1.4,3);lamp.position.y=2.42;
-scene.add(lamp,new T.HemisphereLight(0xfff4e6,0x979ac4,.70));
+const glow=new T.Sprite(new T.SpriteMaterial({map:blobTexture([[0,'rgba(255,237,170,.94)'],[.15,'rgba(255,187,75,.5)'],[.42,'rgba(244,145,52,.13)'],[1,'transparent']]),blending:T.AdditiveBlending,transparent:true,depthWrite:false}));glow.scale.set(.51,.69,1);glow.position.y=2.45;scene.add(glow);
+// Shift the light slightly down the candle so the small glow reaches the frosting.
+const lamp=new T.PointLight(0xffbd78,0,1.06);
+lamp.position.y=2.16;
+scene.add(lamp,new T.HemisphereLight(0xfff4e6,0x979ac4,.61));
 function light(x,y,z,color,power){const l=new T.DirectionalLight(color,power);l.position.set(x,y,z);scene.add(l)}
-light(-3,5,4,0xffe4ca,1.1);light(3,4,-4,0x93b4ff,1.43);light(4,1,3,0xb4a1e8,.43);
+light(-3,4.3,4,0xffe4ca,.86);light(3,2.35,-4,0x93b4ff,.90);light(4,1,3,0xb4a1e8,.38);
 function environment() {
  const surface=document.createElement('canvas');
  surface.width=256;surface.height=128;
@@ -140,7 +164,7 @@ for(const [shape,geometry] of Object.entries({star,gem,chip})){
  const items=decoration.orbit.filter(p=>p.shape===shape);
  const batch=new T.InstancedMesh(geometry,new T.MeshBasicMaterial({color:0xffffff}),items.length);
  batch.instanceMatrix.setUsage(T.DynamicDrawUsage);batch.frustumCulled=false;scene.add(batch);
- items.forEach((p,i)=>batch.setColorAt(i,new T.Color(p.color)));
+ items.forEach((p,i)=>batch.setColorAt(i,srgb(p.color)));
  floaters.push({batch,items});
 }
 const mist=new T.BufferGeometry(),positions=[],motion=[],colors=[];
@@ -210,14 +234,14 @@ function frame(now){
  flame.visible=ignition>.005;
  flame.rotation.z=.057*Math.sin(elapsed*3.7)+.025*Math.sin(elapsed*6.1);
  flame.scale.y=ignition*(1+.047*Math.sin(elapsed*5));
- glow.material.opacity=ignition*.72;
- lamp.intensity=ignition*(1.63+.1*Math.sin(elapsed*5));
+ glow.material.opacity=ignition*.51;
+ lamp.intensity=ignition*(.65+.055*Math.sin(elapsed*5));
  for(const {batch,items} of floaters){
   items.forEach((p,i)=>{
    const a=p.a+elapsed*p.speed,z=p.radius*Math.cos(a);
    temp.position.set(p.radius*Math.sin(a),p.y+p.lift*Math.sin(elapsed*.55+p.phase),z);
    temp.rotation.set(.32*Math.sin(p.phase),.4*Math.sin(a),p.phase+elapsed*.08);
-   const size=p.size*(.89+.14*Math.sin(elapsed*.72+p.phase));
+   const size=p.size*decoration.orbitScale(p.shape,a-yaw)*(.89+.14*Math.sin(elapsed*.72+p.phase));
    temp.scale.setScalar(size);temp.updateMatrix();batch.setMatrixAt(i,temp.matrix);
   });
   batch.instanceMatrix.needsUpdate=true;

@@ -40,9 +40,18 @@ for i in range(36):
     d.polygon([(x+math.sin(j*math.pi/n)*r*(.38 if j%2 else 1),y-math.cos(j*math.pi/n)*r*(.38 if j%2 else 1)) for j in range(n*2)],fill=rng.choice(colors))
 font=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf',21)
 d.text((W//2,H*.49),'Happy birthday',font=font,anchor='mm',fill='#ffefc7')
-# Marbled buttercream, warped veins with hand-mixed pastel and saffron.
-g=field(u,v+.13*np.sin(u*2)); g=field(u+.20*g,v+.06*g)
-top=Image.fromarray(np.uint8(palette((np.sin(g*1.1)+1)/2,[(165,121,146),(198,154,156),(219,180,162),(234,207,177),(216,173,134),(235,207,179)])))
+# Cylindrical UV canvas: the horizontal coordinate wraps around the top and
+# the vertical coordinate runs from the candle to the piping.
+theta = u - math.pi / 2
+swirl = 2 * (theta - (v - .17) / .69 * 1.35 * math.tau) + .26*np.sin(3*theta + 13*v)
+folds = np.sin(swirl)
+center = np.clip(v / .15, 0, 1)
+fold_strength = center * (.67 + .33*np.sin(math.pi*v))
+shade = (folds*.25 + np.sin(3*swirl + .6)*.1 + np.sin(7*swirl + 1.3)*.036)*fold_strength
+cream_mix = np.clip(.65 + shade + .13*np.sin(4*theta + v*7)*center, 0, 1)
+top = Image.fromarray(np.uint8(palette(cream_mix, [
+    (133,105,146),(166,130,160),(194,153,161),(212,173,156),(234,203,169),
+])))
 with open('textures.js','w') as out:
     top=top.resize((768,256),Image.Resampling.LANCZOS)
     frost(top)

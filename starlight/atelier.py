@@ -67,16 +67,22 @@ def illuminate(image):
         draw.polygon(points,fill=color)
 
 def frost(image):
-    draw=ImageDraw.Draw(image)
-    w,h=image.size
-    r=random.Random(29)
-    colors=[(231,174,82),(237,200,128),(250,218,163),(213,155,115),(176,114,153),
-            (101,132,165),(56,142,184),(110,167,158),(247,179,138),(247,218,166)]
-    for _ in range(510):
-        x=r.uniform(0,w)
-        y=r.uniform(12,h)
-        index=r.randrange(len(colors))
-        if y<h*.44:
-            index=r.choice([0,1,2,3,9])
-        paint_stroke(draw,w,x,y,r.uniform(14,72),r.uniform(2,8),
-                     r.uniform(-.46,.46),r.uniform(-7,7),colors[index],r)
+    """Broken, shaded strokes follow the buttercream folds."""
+    draw = ImageDraw.Draw(image, 'RGBA')
+    w, h = image.size
+    r = random.Random(29)
+    hues = [(245,220,185,32),(236,201,174,31),(186,151,169,28),
+            (152,119,151,39),(250,214,177,29)]
+    for _ in range(410):
+        y = r.uniform(h*.17, h*.9)
+        angular_offset = r.gauss(0, .084)
+        phase = (y/h - .17) / .69 * 1.35 + .25 + r.randrange(2)*.5
+        x = (phase + angular_offset) % 1 * w
+        length = r.uniform(6, 26)
+        width = r.uniform(.75, 3.2)
+        # The UV curve winds rightwards as it moves toward the rim.
+        stroke = [(x-length*.5,y-width*.4), (x+length*.18,y+width*.7),
+                  (x+length*.5,y+width*1.6), (x-length*.26,y+width*.6)]
+        color = r.choice(hues)
+        for shift in (-w, 0, w):
+            draw.polygon([(px+shift, py) for px,py in stroke], fill=color)
