@@ -28,7 +28,7 @@ async function softwareCake(){
    if(H<Math.min(h0,h1)-.00001||H>Math.max(h0,h1)+.00001||R<Math.min(r0,r1)-.0001||R>Math.max(r0,r1)+.0001)continue;
    D=d;const norm=Math.hypot(dr,dh),nx=X/R*dh/norm,ny=-dr/norm,nz=Z/R*dh/norm;
    const l=.67+.37*Math.max(0,-.55*nx+.69*ny+.48*nz);
-   if(name==='Porcelain'){const sh=1-.47*Math.exp(-(((R-1)/.13)**2));color=H<.053&&R>1.42?[66*l,124*l,221*l]:[241*l*sh,240*l*sh,247*l*sh];if(R>1.493&&ny>.25)color=[221,191,140]}
+   if(name==='Porcelain'){const sh=1-.47*Math.exp(-(((R-1)/.13)**2));color=H<.053&&R>1.42?[133*l,81*l,63*l]:[103*l*sh,89*l*sh,144*l*sh];if((R>1.479&&ny>.2)||Math.abs(R-1.373)<.005)color=[218,175,108]}
    else color={u:Math.atan2(X,Z)/tau,v:1-H/1.44,l,shine:12*Math.pow(Math.max(0,nz*.88-nx*.46),10)};
   }
  }}
@@ -118,6 +118,50 @@ async function softwareCake(){
    star(x,y+1.8,r,spin,'#493449',.62);star(x,y,r,spin,color,.62);
   }else chip(x,y,r,spin,color,.57);
  }
+ const moon = [];
+ const tip = Math.PI*57/180;
+ const mid = .39;
+ const cut = Math.atan2(Math.sin(tip), Math.cos(tip)-mid);
+ const cutRadius = Math.hypot(Math.cos(tip)-mid, Math.sin(tip));
+ for(let i=0;i<=24;i++){
+  const a=tip+(tau-2*tip)*i/24;
+  moon.push([Math.cos(a),Math.sin(a)]);
+ }
+ for(let i=1;i<24;i++){
+  const a=-cut-(tau-2*cut)*i/24;
+  moon.push([mid+cutRadius*Math.cos(a),cutRadius*Math.sin(a)]);
+ }
+ const pointedStar = Array.from({length:8},(_,i)=>{
+  const a=i*tau/8,r=i%2?.31:1;
+  return [r*Math.sin(a),r*Math.cos(a)*1.22];
+ });
+ const toppings=[
+  {x:-.49,y:1.69,z:.064,r:.232,a:-.35,spin:.25,shape:moon,light:'#fff1bb',color:'#bd843a'},
+  {x:-.25,y:1.81,z:.035,r:.088,a:-.26,spin:-.14,shape:pointedStar,light:'#fff4d6',color:'#d4a566'},
+  {x:.48,y:1.63,z:.09,r:.143,a:.31,spin:.32,shape:pointedStar,light:'#becffc',color:'#4e76b1'},
+  {x:.40,y:1.65,z:-.35,r:.117,a:.57,spin:-.29,shape:pointedStar,light:'#ffe6a3',color:'#c79444'},
+ ];
+ function paintToppings(turn){
+  const c=Math.cos(turn),s=Math.sin(turn);
+  const rotated=toppings.map(t=>({t,x:t.x*c+t.z*s,z:t.z*c-t.x*s})).sort((a,b)=>a.z-b.z);
+  for(const {t,x,z} of rotated){
+   const [cx,cy]=project(x,t.y,z);
+   const C=Math.cos(turn+t.a),S=Math.sin(turn+t.a);
+   const gradient=g.createLinearGradient(cx-t.r*k,cy-t.r*k,cx+t.r*k,cy+t.r*k);
+   gradient.addColorStop(0,t.light);gradient.addColorStop(.26,t.color);
+   gradient.addColorStop(.53,t.light);gradient.addColorStop(1,t.color);
+   g.beginPath();
+   for(const [u,v] of t.shape){
+    const U=(u*Math.cos(t.spin)-v*Math.sin(t.spin))*t.r;
+    const V=(u*Math.sin(t.spin)+v*Math.cos(t.spin))*t.r;
+    const [sx,sy]=project(x+U*C,t.y+V,z-U*S);
+    g.lineTo(sx,sy);
+   }
+   g.closePath();
+   g.strokeStyle=t.color;g.lineWidth=1.55;g.stroke();
+   g.fillStyle=gradient;g.fill();
+  }
+ }
  function movePiece(piece,turn){
   const angle=piece.angle+turn,z=piece.radius*Math.cos(angle);
   piece.x=N/2+piece.radius*Math.sin(angle)*k;
@@ -155,12 +199,19 @@ async function softwareCake(){
   for(const piece of candy)movePiece(piece,turn);
   candy.sort((a,b)=>a.d-b.d);
   for(const piece of candy)drawPiece(piece);
+  paintToppings(turn);
 
   const [cx,cy]=project(0,1.52,0),[,fy]=project(0,2.3,0);
   const flicker=2.1*Math.sin(t*3.5)+.9*Math.sin(t*5.7),ignition=ceremony.light(time);
   g.globalAlpha=ignition*(.82+.05*Math.sin(t*5));
   halo(cx,cy,91,creamLight);g.globalAlpha=1;
   g.fillStyle=wax;g.fillRect(cx-5,fy,10,cy-fy);
+  g.save();g.beginPath();g.rect(cx-5,fy,10,cy-fy);g.clip();
+  g.strokeStyle='#9a653eab';g.lineWidth=1.2;
+  for(let y=fy+5;y<cy+6;y+=18){
+   g.beginPath();g.moveTo(cx-5,y+3);g.lineTo(cx+5,y-3);g.stroke();
+  }
+  g.restore();
   g.fillStyle='#382a22';g.fillRect(cx-1,fy-8,2,9);
   g.globalAlpha=ignition;halo(cx,fy-24,65,fireLight);
   for(let j=0;j<2;j++){
