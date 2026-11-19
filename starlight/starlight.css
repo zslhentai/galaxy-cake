@@ -9,12 +9,16 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; }
-body { background: var(--night); color: var(--ivory); isolation: isolate; }
+body {
+  position: fixed; inset: 0; width: 100%; height: 100dvh;
+  background: var(--night); color: var(--ivory); isolation: isolate;
+}
 button { color: inherit; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button:focus-visible, #cake:focus-visible { outline: 1px solid var(--gold); outline-offset: 4px; }
 button:disabled { cursor: default; }
 .nebula, #sky { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .nebula {
+  overflow: hidden;
   background: radial-gradient(ellipse at 50% 42%, #21254d, #070817 72%);
 }
 .nebula::before {
