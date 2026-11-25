@@ -32,6 +32,8 @@ let camera;
 let firstVisible = false;
 let attempted = false;
 let renderCount = 0;
+let previousView;
+let previousPhase = '';
 
 function active() { return !!renderer && phase !== 'opening'; }
 const drawSky = makeSky(sky,stage,reduced);
@@ -143,6 +145,7 @@ async function install(fallbackOnly) {
     delete body.dataset.rendered;
   }
 }
+addEventListener('resize',()=>{previousView=undefined;},{passive:true});
 install(forceCanvas);
 
 const clamp=(t)=>Math.max(0,Math.min(1,t));
@@ -160,8 +163,10 @@ function update(now) {
   const glow=phase==='blessing'?0:phase==='blowing'?(reduced?0:1-ease((blown-.09)/.53)):ignition;
   const progress=phase==='arrival'?ease(epoch/1440):phase==='blowing'?ease(epoch/1370):phase==='blessing'?ease(epoch/2200):0;
   drawSky(now,phase,progress);
-  if(active()){
-    renderer.draw(now,camera.update(now),{
+  const view=active()?camera.update(now):null;
+  const unchanged=previousView&&view&&Object.keys(view).every(key=>Math.abs(view[key]-previousView[key])<1e-5);
+  if(view&&(!reduced||!unchanged||previousPhase!==phase||!firstVisible||renderer.needsFrame)){
+    renderer.draw(now,view,{
       time:reduced?.44:now/1000,
       flame:glow,
       bend:phase==='blowing'?ease(blown/.34)*.54:0,
@@ -169,6 +174,10 @@ function update(now) {
       stars:phase==='blessing'?1-progress*.68:progress*.42,
     });
     renderCount++;
+    if(reduced) {
+      previousView={...view};
+      previousPhase=phase;
+    }
     if(!firstVisible){
       firstVisible=true;
       canvas.tabIndex=0;

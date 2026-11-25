@@ -112,7 +112,7 @@ body:is([data-phase="lit"],[data-phase="blowing"],[data-phase="blessing"]) .tool
 @media (pointer:coarse) { .desktop-help { display:none; } .phone-help { display:inline; } }
 #diagnostics {
   position:absolute; z-index:10; bottom:7px; left:8px; margin:0; padding:6px 8px; font:11px/1.4 monospace;
-  color:#fff4df; background:#090913dd; border-radius:6px; max-width:calc(100vw - 16px); white-space:pre-wrap;
+  color:#fff4df; background:#090913dd; border-radius:6px; max-width:calc(100vw - 16px); white-space:pre-wrap; pointer-events:none;
 }
 @media (max-width:720px) and (orientation:portrait) {
   .mast { top:max(15px,calc(env(safe-area-inset-top) + 11px)); left:18px; right:18px; }

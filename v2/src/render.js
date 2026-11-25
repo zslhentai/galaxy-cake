@@ -1,7 +1,7 @@
 import {
   ACESFilmicToneMapping, AdditiveBlending, AmbientLight, BufferGeometry, CanvasTexture, Color,
   DirectionalLight, EquirectangularReflectionMapping, Float32BufferAttribute, HemisphereLight,
-  LatheGeometry, Mesh, MeshBasicMaterial, OrthographicCamera, PlaneGeometry, PMREMGenerator,
+  LatheGeometry, Mesh, MeshBasicMaterial, MeshStandardMaterial, OrthographicCamera, PlaneGeometry, PMREMGenerator,
   PointLight, Points, PointsMaterial, Scene, Sprite, SpriteMaterial,
   SRGBColorSpace, Vector2, Vector3, WebGLRenderer,
 } from 'three';
@@ -141,10 +141,19 @@ export async function makeWebGL(canvas,stage,quality) {
     const loader=new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
     const {scene:model}=await loader.loadAsync(asset('cake.glb'));
+    const matteSurfaces=new Map();
+    model.traverse(object=>{
+      const material=object.material;
+      if(!material?.isMeshPhysicalMaterial||material.clearcoat>.14)return;
+      // These matte surfaces keep e.g. albedo and roughness but need only one reflection lobe.
+      if(!matteSurfaces.has(material))matteSurfaces.set(material,new MeshStandardMaterial().copy(material));
+      object.material=matteSurfaces.get(material);
+    });
     scene.add(model);
-    let w=0,h=0,budget=quality==='low'?1:1.45,slow=0,last=0;
+    let w=0,h=0,budget=quality==='low'?1:1.45,slow=0,last=0,dirty=true;
     const aim=new Vector3(0,focus,0);
     function resize() {
+      dirty=true;
       w=stage.clientWidth;h=stage.clientHeight;
       const cap=Math.min(budget,w<620?1.36:1.5,Math.sqrt(1500000/Math.max(1,w*h)));
       renderer.setPixelRatio(Math.min(devicePixelRatio||1,cap));
@@ -159,11 +168,15 @@ export async function makeWebGL(canvas,stage,quality) {
     fit.observe(stage);
     return {
       mode:'WebGL',
+      get needsFrame() { return dirty; },
       draw(now,view,effects) {
         const dt=Math.min(.1,(now-last)/1000);
         last=now;
         slow=dt>.030?slow+dt:Math.max(0,slow-dt*2);
-        if(quality==='auto'&&slow>2.6&&budget>1){budget=Math.max(1,budget-.22);resize();slow=0;}
+        if(quality==='auto'&&slow>1.8&&budget>.86){
+          const lower=Math.min(budget,renderer.getPixelRatio())-.16;
+          budget=Math.max(.86,lower);resize();slow=0;
+        }
         const ring=8*Math.cos(view.pitch);
         aim.y=closeFocus(w,view.zoom);
         camera.position.set(ring*Math.sin(view.yaw),aim.y+8*Math.sin(view.pitch),ring*Math.cos(view.yaw));
@@ -189,6 +202,7 @@ export async function makeWebGL(canvas,stage,quality) {
           puff.material.opacity=.28*Math.sin(life*Math.PI)*(1-index*.064);
         });
         renderer.render(scene,camera);
+        dirty=false;
       },
       get stats() { return {...renderer.info.render,...renderer.info.memory,pixelRatio:renderer.getPixelRatio()}; },
       dispose() { fit.disconnect();renderer.dispose(); },
@@ -211,8 +225,9 @@ export async function makeFallback(canvas,stage) {
   const ctx=canvas.getContext('2d');
   if(!ctx)throw new Error('Canvas rendering unavailable');
   const [low,high]=await Promise.all([loadImage('orbit-low.webp'),loadImage('orbit-high.webp')]);
-  let width,height,dpr;
+  let width,height,dpr,dirty=true;
   function resize() {
+    dirty=true;
     width=stage.clientWidth;
     height=stage.clientHeight;
     dpr=Math.min(devicePixelRatio||1,1.25);
@@ -224,7 +239,9 @@ export async function makeFallback(canvas,stage) {
   new ResizeObserver(resize).observe(stage);
   return {
     mode:'Canvas 360°',
+    get needsFrame() { return dirty; },
     draw(now,view,effects) {
+      dirty=false;
       ctx.clearRect(0,0,width,height);
       const useHigh=view.pitch>.615;
       const frame=(Math.round(view.yaw/tau*16)%16+16)%16;
