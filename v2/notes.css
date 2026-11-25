@@ -1,0 +1,22 @@
+@font-face { font-family: "Instrument Serif"; src: url("./assets/instrument-serif-italic.woff2") format("woff2"); font-style: italic; font-display: swap; }
+:root { color-scheme:dark; background:#0d1226; color:#f8ead9; font-family:Georgia,"Songti SC","Noto Serif CJK SC",serif; }
+* { box-sizing:border-box; }
+body { margin:0; }
+main { width:min(100%,1080px); padding:32px clamp(22px,5vw,76px) 75px; margin:auto; }
+nav { display:flex; justify-content:space-between; gap:14px; font-size:14px; }
+a { color:#e7bd88; text-underline-offset:5px; }
+a:focus-visible { outline:1px solid #e7bd88; outline-offset:3px; }
+header { margin:clamp(32px,9vw,90px) 0 30px; }
+.section { color:#d9b587; font-size:14px; letter-spacing:.19em; }
+h1 { font-weight:500; font-size:clamp(45px,8vw,86px); margin:7px 0 13px; line-height:1.13; }
+.intro { color:#e5cfc0; font-size:clamp(16px,2.2vw,22px); }
+p { line-height:1.75; color:#d5cad2; }
+h2 { font-weight:500; margin:0; color:#faead7; font-size:clamp(25px,4vw,39px); }
+figure { margin:0; }
+figure img { display:block; width:100%; height:auto; border-radius:5px; }
+main>figure img { aspect-ratio:1.42; object-fit:cover; object-position:50% 41%; }
+figcaption { margin:10px 0 0; color:#cbb2a8; font-size:13px; }
+section { margin:45px 0 0; padding-top:29px; border-top:1px solid #9a867653; }
+.sources { display:flex; flex-wrap:wrap; gap:13px 26px; padding-left:18px; line-height:1.5; }
+.entries { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+@media (max-width:610px) { .entries { grid-template-columns:1fr; } main>figure img { aspect-ratio:auto; } }

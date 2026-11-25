@@ -1,0 +1,11 @@
+{
+  "name": "galaxy-cake-preview",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --minify --format=esm --legal-comments=eof --outfile=atelier.js"
+  },
+  "dependencies": { "three": "0.183.2" },
+  "devDependencies": { "esbuild": "0.28.2" }
+}

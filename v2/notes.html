@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0d1226">
+  <title>作品手记 · 星河许愿 2.0</title>
+  <link rel="stylesheet" href="./notes.css">
+</head>
+<body>
+  <main>
+    <nav><a href="./">星河许愿 2.0</a><a href="../">体验旧版</a></nav>
+    <header>
+      <p class="section">作品手记</p>
+      <h1>夜釉星河</h1>
+      <p class="intro">为远看设计一道星河，为近看制作奶油、釉面和糖艺。</p>
+    </header>
+    <figure>
+      <img src="./assets/detail.webp" width="810" height="867" loading="eager" alt="Blender 近景渲染中的金月倒角、双道奶油旋纹和烛芯">
+      <figcaption>Blender 原始资产近景。浏览器中的烛焰和灯光由 Three.js 实时控制。</figcaption>
+    </figure>
+    <section>
+      <h2>怎么选定夜釉星河</h2>
+      <p>糖艺作品给了釉面流向和偏心装饰的参考，天文图像给了密度和冷暖关系，沉浸式展示网站给了控制权交接的参考。三套 Blender 样片共用机位和影棚光。夜釉星河同时保留了暖烛、金月和能环绕侧面阅读的蓝紫笔触。</p>
+      <ul class="sources">
+        <li><a href="https://www.moma.org/collection/works/79802?locale=en">MoMA《星夜》</a></li>
+        <li><a href="https://mypastryclass.com/products/copy-of-ksenia-penkina-teaches-glazing-1">Ksenia Penkina 镜面釉</a></li>
+        <li><a href="https://immersive-g.com/projects/cartier-watches-and-wonders-24/">Immersive Garden 展示案例</a></li>
+      </ul>
+    </section>
+    <section>
+      <h2>同机位看变化</h2>
+      <p>从左到右是默认、俯视、旋转和放大，上排为旧版，下排为新版。截图来自移动尺寸的 Chromium WebGL 测试，使用相同的相机操作输入。</p>
+      <figure class="comparison">
+        <img src="./assets/compare.webp" width="1080" height="1170" loading="lazy" alt="八张新旧版截图，分别比较默认、俯视、旋转和放大四个机位">
+      </figure>
+    </section>
+    <section class="entries">
+      <div><h2>用户定方向</h2><p>项目从手绘星空、梦幻氛围和生日仪式感出发。此前 iPhone 截图发现了顶面发白，成为灯光改造时需要复验的具体问题。</p></div>
+      <div><h2>AI 辅助实现与验证</h2><p>制作造型和釉面脚本，建立三套样片，导出 glTF，处理浏览器里的星轨、烛光和吹灭状态。首轮浏览器近景偏白，随后降低环境填充，调整主光高度及色调映射，再复拍。</p></div>
+    </section>
+    <section>
+      <h2>真机复现</h2>
+      <p>打开 <a href="./?diag=1">诊断预览</a>，点亮后静置，拖动一圈，再双指放大、吹灭和重新点亮。诊断栏会显示渲染路径、帧时间和 WebGL 绘制量。iPhone Safari 真机数据待验证。</p>
+      <p><a href="./?mode=canvas">查看 Canvas 兼容版</a> · <a href="https://github.com/zslhentai/galaxy-cake/tree/feat/galaxy-cake-2.0/v2">浏览实现</a></p>
+    </section>
+  </main>
+</body>
+</html>
